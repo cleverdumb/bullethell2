@@ -21,6 +21,8 @@
             };
             
             let health = 100;
+
+            let spawnEnemyInterval = 0;
             
             class Player {
                 constructor(x, y) {
@@ -195,6 +197,62 @@
                     }
                 }
             };
+
+            class RangeEnemy {
+                constructor(x,y) {
+                    this.x = x;
+                    this.y = y;
+                    this.c = 'red';
+                    this.r = 15;
+                    setInterval(x=>{
+                        this.attack();
+                    },5000);
+                    this.health = 60;
+                    this.getDest();
+                }
+                draw() {
+                    if (this.attacking) {
+                        ctx.fillStyle='purple';
+                        ctx.beginPath();
+                        ctx.arc(this.x,this.y,this.r+30,0,2*Math.PI);
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                    ctx.fillStyle = this.c;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.closePath();
+                }
+                attack() {
+                    this.attacking=true;
+                    setTimeout(()=>{
+                        this.attacking=false;
+                    },1000);
+                    if (Math.hypot(this.x-player.x,this.y-player.y)-this.r-player.r<30) {
+                        health-=10;
+                        if (health<=0) {
+                            lose();
+                        }
+                    }
+                }
+                getDest() {
+                    this.destX = Math.random()*570+15;
+                    this.destY = Math.random()*570+15;
+                    this.dir = Math.atan2(this.destY-this.y,this.destX-this.x);
+                    this.dx = Math.cos(this.dir)*3;
+                    this.dy = Math.sin(this.dir)*3;
+                }
+                update() {
+                    if (Math.abs(this.destX-this.x)<3 && Math.abs(this.destY-this.y)<3) {
+                        this.getDest();
+                    }
+                    else {
+                        this.x += this.dx;
+                        this.y += this.dy;
+                    }
+                }
+            }
             
             const player = new Player(100, 100);
             let enemies = [];
@@ -205,7 +263,8 @@
                 cvs.hidden = true;
                 loopContinue = false;
                 document.getElementById('info').hidden = true;
-                document.querySelector('h1').hidden = false
+                document.querySelector('h1').hidden = false;
+                clearInterval(spawnEnemyInterval);
             };
             let keyMap = {};
             
@@ -265,24 +324,37 @@
                 player.shoot(x, y)
             });
             
-            setInterval(() => {
-                let x = 0;
-                let y = 0;
-                if (Math.random() < 0.5) {
-                    x = (Math.random() < 0.5) ? -15 : 615;
-                    y = Math.random() * 570 + 15
-                } else {
-                    y = (Math.random() < 0.5) ? -15 : 615;
-                    x = Math.random() * 570 + 15
-                };
-                let rand = Math.round(Math.random());
-                if (rand == 0) {
-                    enemies.push(new NormalEnemy(x, y))
-                } else if (rand == 1) {
-                    enemies.push(new ShooterEnemy(x, y));
-                    enemies.push(new ShooterEnemy(y, x))
-                }
-            }, (Math.random() + 2) * 1000)
+            function startSpawning() {
+                spawnEnemyInterval = setInterval(() => {
+                    let x = 0;
+                    let y = 0;
+
+                    if (Math.random() < 0.5) {
+                        x = (Math.random() < 0.5) ? -15 : 615;
+                        y = Math.random() * 570 + 15
+                    } else {
+                        y = (Math.random() < 0.5) ? -15 : 615;
+                        x = Math.random() * 570 + 15
+                    };
+
+                    let rand = Math.round(Math.random()*2);
+
+                    if (rand == 0) {
+                        enemies.push(new NormalEnemy(x, y))
+                    } else if (rand == 1) {
+                        enemies.push(new ShooterEnemy(x, y));
+                        if (Math.random()>0.5) {
+                            enemies.push(new ShooterEnemy(y, x))
+                        }
+                    }
+                    else if (rand==2) {
+                        enemies.push(new RangeEnemy(x,y));
+                    }
+                }, (Math.random() + 2) * 1000)
+            }
+
+            startSpawning();
+
         </script>
     </body>
 </html>
